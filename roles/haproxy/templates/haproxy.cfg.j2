@@ -1,0 +1,48 @@
+global
+    log /dev/log   syslog notice
+    maxconn 24000
+    #chroot /usr/share/haproxy
+    user haproxy
+    group haproxy
+    daemon
+    stats socket /var/run/haproxy.sock mode 600 level admin
+    #debug
+    #quiet
+
+defaults
+    log     global
+    mode    http
+
+    option  httplog
+    option  dontlognull
+
+    retries 3
+    option redispatch
+
+    option httpclose
+    option abortonclose
+
+    maxconn 2000
+    timeout connect 7s
+    timeout queue   30s
+    timeout client  300s
+    timeout server  300s
+
+    option httpchk
+
+listen admin
+    bind *:{{ loadbalancer_monitor_port }}
+    stats enable
+    stats uri /admin
+    # We're only connecting via ssh
+    # stats auth haproxy:{{ admin_secret|default('notsosecret') }}
+
+{% for front_end in playbook_plones %}
+listen {{ front_end.plone_instance_name|default(plone_instance_name) }}
+    bind *:{{ front_end.loadbalancer_port|default(loadbalancer_port) }}
+
+{% for client in range(0, front_end.plone_client_count|default(plone_client_count)|int) %}
+    server client{{ client + 1 }} 127.0.0.1:{{ "%s" % (front_end.plone_client_base_port|default(plone_client_base_port)|int + client) }} check {{ front_end.loadbalancer_options|default(loadbalancer_options) }}
+{% endfor %}
+
+{% endfor %}

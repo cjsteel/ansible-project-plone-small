@@ -1,0 +1,27 @@
+---
+
+# Make sure you read and understand the rules applied for your platform.
+# You can easily lock yourself out of a server with the wrong rule set.
+#
+# Debian/Ubuntu rules: firewalls/debian-ufw.yml
+# RedHat/CentOS rules: firewalls/centos-firewalld.yml
+
+
+- hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+
+  - name: Include vars from local-configure.yml if found
+    include_vars: "{{ item }}"
+    with_first_found:
+     - local-configure.yml
+     - null.yml
+
+  - include: firewalls/debian-ufw.yml
+    when: ansible_os_family == 'Debian'
+
+  - include: firewalls/centos-firewalld.yml
+    when: ansible_os_family == 'RedHat'
+

@@ -1,0 +1,63 @@
+server {
+{% if item.get('protocol', 'http') == 'https' %}
+  listen {{ item.address|default('*') }}:{{ item.port|default('443') }}{% if item.get('default_server') %} default_server{% endif %} ssl{% if use_http2 %} http2{% endif %};
+
+{% if item.get('certificate') %}
+  ssl_certificate {{ item.certificate.crt }};
+  ssl_certificate_key {{ item.certificate.key }};
+{% else %}
+  ssl_certificate /etc/nginx/ssl/{{ item.hostname }}.crt;
+  ssl_certificate_key /etc/nginx/ssl/{{ item.hostname }}.key;
+{% endif %}
+
+  ssl_protocols {{ item.ssl_protocols|default(ssl_protocols) }};
+  ssl_ciphers "{{ item.ssl_ciphers|default(ssl_ciphers) }}";
+  ssl_prefer_server_ciphers on;
+  ssl_dhparam /etc/nginx/ssl/dhparam.pem;
+  {% else %}
+  listen {{ item.address|default('*') }}:{{ item.port|default('80') }} {% if item.get('default_server') %}default_server{% endif %};
+  {% endif %}
+
+  server_name {{ item.hostname }} {% for alias in item.get('aliases', []) %}{{ alias }} {% endfor %};
+
+  client_max_body_size {{ item.client_max_body_size|default(client_max_body_size) }};
+
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $remote_addr;
+
+{% if item.get('protocol', 'http') == 'https' %}
+   set $vh_protocol "https";
+   set $vh_port "{{ item.port|default('443') }}";
+{% else %}
+   set $vh_protocol "http";
+   set $vh_port "{{ item.port|default('80') }}";
+ {% endif %}
+
+{% if item.get('extra') != None %}
+  {{ item.extra }}
+{% endif %}
+
+{% if item.get('zodb_path') != None %}
+  location / {
+    auth_basic off;
+    {% if item.get('location_extra') != None %}
+      {{ item.location_extra }}
+    {% endif %}
+    rewrite ^/(.*)$ /VirtualHostBase/$vh_protocol/$server_name:$vh_port{{ item.zodb_path }}/VirtualHostRoot/$1 break;
+    proxy_pass http://localhost:{{ proxycache_port|default('6081') }};
+  }
+  location ~ /manage_ {
+    deny all;
+  }
+{% endif %}
+
+{% if item.get('protocol', 'http') == 'http' and (item.hostname == 'localhost' or 'default' in item.get('aliases', [])) %}
+  location /nginx_status {
+    stub_status on;
+    access_log off;
+    allow 127.0.0.1;
+    deny all;
+  }
+{% endif %}
+
+}

@@ -1,0 +1,365 @@
+1.2.18 (unreleased)
+
+- Clarify certificate files process (#73)
+  [stevepiercy]
+
+- Add audit role to catch unmaintained nginx or supervisor configuration files.
+  [smcmahon]
+
+1.2.17 2017-05-25
+
+- Document need for Python 2.7.x to be activated in Xenial+.
+  Fixes #82.
+  [smcmahon]
+
+- Use Plone 5.0.7 in samples.
+  [stevepiercy]
+
+- Make client_max_body_size work either globally or in virtual host blocks.
+  [smcmahon]
+
+- Add proxy_cache_vcl_extra variable that allows the addition of miscellaneous VCL to the varnish default.vcl file.
+  [smcmahon]
+
+- Add a new option plone_hot_monitor that may be set to `superlance` or `cron`.
+  `superlance` is the default.
+  If `cron` is specified, a cron script will run twice an hour to restart if memory use is hot.
+  [smcmahon]
+
+- Add a script that will restart a client using the single-client restart script (thus getting cluster-maintenance and cache-warming features) if it's using too much memory.
+  [smcmahon]
+
+- Move to plone_server role v 1.2.17.
+  [smcmahon]
+
+- Document restart script; add single-client restart script; add warm_path option.
+  [smcmahon]
+
+- Logwatch role: check for new update notification was too specific. Fixed.
+  [smcmahon]
+
+1.2.16 2017-04-24
+
+- Make update-notifier work in logwatch on Xenial.
+  [smcmahon]
+
+- Cleanup motd formatting.
+  [smcmahon
+
+- Munin-node: Add and use varnish4_ plugin if using varnish4.
+  [smcmahon]
+
+- Munin-node: use haproxy_ng when available.
+  [smcmahon]
+
+- Add logwatch_ignore variable to set contents of logwatch's ignore.conf file.
+  [smcmahon]
+
+- Use plone role 1.2.16. Advance playbook version to match.
+  [smcmahon]
+
+1.2.15 (never released)
+
+- Updated the Makefile to use "virtualenv -p python2.7" instead of "virtualenv-2.7"
+  [pigeonflight]
+
+- Implement our own fail2ban role which will run on debian and redhat families.
+  [smcmahon]
+
+- Our munin-node plugin for plone/zope RSS needs to distinguish instances.
+  [smcmahon]
+
+- Clean up restart script a bit. It was unnecessarily noisy.
+  [smcmahon]
+
+- The varnish default.vcl we generate had a logical error that would cause it to use the primary server incorrectly in some cases where multiple plones were installed and multiple hostnames in use. Fixed.
+  [smcmahon]
+
+- Allow myhostname in Postfix to be set to something other than the inventory hostname via a mail_hostname variable.
+  [smcmahon]
+
+- Change version to match up with plone_server.
+  [smcmahon]
+
+1.2.14 (unreleased)
+
+- Very old nginx does not have the ssl_session_tickets parameter.
+  So, don't use it if nginx is old.
+  [smcmahon]
+
+- Use plone_server 1.2.15.
+  [smcmahon]
+
+- Use plone_server 1.2.14.
+  [smcmahon]
+
+- motd was not picking up correct paths when using multiple plones. Fixed.
+  [smcmahon]
+
+- Remove uses of jinja2 "truncate", which has stopped working as advertised.
+  [smcmahon]
+
+- Add mechanisms to control SSL variables like protocols and ciphers.
+  Add http2 support.
+  All documented in docs/webserver.rst.
+  [smcmahon]
+
+- Add mailserver_maincf_extras option for Postfix setup.
+  [smcmahon]
+
+- Add logwatch for plone errors; add vsz and rss to supervisor process list watch.
+  [smcmahon]
+
+1.2.13 2016-10-07
+
+- We want plone_server 1.2.13.
+  [smcmahon]
+
+1.2.12 unreleased
+
+- Turn of ssh strict host checking by Ansible in generated Vagrant vbox_host.cfg.
+  [smcmahon]
+
+- Postfix "mydestination" parameter was incorrect, blocking local mail. Fixes #50.
+  [smcmahon]
+
+- Use plone server role 1.2.12.
+  [smcmahon]
+
+- Use Plone 5.0.6 in samples.
+  [smcmahon]
+
+- Add a provisioning mechanism that creates vbox_host.cfg during vagrant provisioning.
+  This makes it easier to use Ansible directly against the newer generation of Vagrant boxes that don't have insecure keys.
+  Since vbox_host.cfg is now dynamically generated, remove it from distribution.
+  [smcmahon]
+
+- Use subroutines to keep vcl_recv shorter in Varnish vcl.
+  [gforcada]
+
+1.2.11 2016-09-22
+
+- Use plone server role 1.2.11.
+  [smcmahon]
+
+1.2.10 2016-08-18
+
+- Use plone server role 1.2.10. Update ansible.fail2ban to 1.5.0.
+  [smcmahon]
+
+- Remove misleading comment.
+  [gforcada]
+
+1.2.9 (unreleased)
+
+- Test cleanups.
+  [smcmahon]
+
+- Document use of ansible_ssh_pipelining in plone role.
+  [smcmahon]
+
+- Set selinux varnishd_connect_any to true on RedHat. Otherwise, Varnish can only connect to 8080.
+  [smcmahon]
+
+- Use plone_server role 1.2.9. Update to use Plone 5.0.5.
+  [smcmahon]
+
+- Add location_extra webserver option. Fixes #35.
+  [smcmahon]
+
+- Always run Ansible version check.
+  [djowett]
+
+- Add a git fork maintenance strategy example to docs.
+  [smcmahon]
+
+- Updated Postfix role to limit mydestination setting to localhost. Otherwise it would not be able to mail to its own hostname, even if that hostname had another MX.
+  [smcmahon]
+
+- Doc update to clarify platform support. Fixes #42.
+  [smcmahon]
+
+1.2.8 2016-04-25
+
+- Use plone server 1.2.8.
+  [smcmahon]
+
+- Establish a STABLE branch to clearly separate the last-released branch from the development branch (master).
+  [smcmahon]
+
+- Split os-family-specific plays into separate include files in roles.
+  [cleberjsantos]
+
+- Update samples to use Plone 5.0.4.
+  [smcmahon]
+
+- Document several variables related to plone site creation. Fixes #74.
+  [smcmahon]
+
+1.2.7 2016-03-28
+
+- Port doc updates from plone_server role.
+  [smcmahon]
+
+- Use plone_server 1.2.7.
+  [smcmahon]
+
+- Use "become" rather than "sudo".
+  [smcmahon]
+
+- We need Ansible >= 2.0.
+  [smcmahon]
+
+- Document plone_rsync_backup_options (from plone_server 1.2.7).
+  [smcmahon]
+
+1.2.6 2016-03-13
+
+- Document plone_buildout_extra_dir (from plone_server).
+  [smcmahon]
+
+- Update to use plone_server role 1.2.6.
+  [smcmahon]
+
+- Switch to using requirements.yml (rather than requirements.txt).
+  [smcmahon]
+
+- Turn on SELinux haproxy_connect_any and httpd_can_network_connect when selinux is enabled.
+  [jpgimenez]
+
+- Relicense as BSD-3-Clause.
+
+1.2.5 2016-01-24
+
+- Require plone_server role v 1.2.5.
+
+- Regularize handling of enables on CentOS with Ansible's service module.
+  [smcmahon]
+
+- Set empty dict defaults for unused plone_config items to work around unneeded evaluation of "count" in with_sequence in Ansible 2.0.
+  [smcmahon]
+
+- Make sure added services are enabled via systemctl. Several CentOS packages don't do that on install.
+  [smcmahon]
+
+- Add reboot to tests. Only what survives a reboot is real.
+  [smcmahon]
+
+- Add CentOS 7.1 as a viable target. fail2ban not yet done.
+  [fulv, smcmahon]
+
+- Specifying the "file" cache method did not work with Varnish 4. Fixed.
+  [smcmahon]
+
+1.2.4 2015-01-10
+
+- Use plone_server 1.2.4; make default Plone version 5.0.2.
+  [smcmahon]
+
+1.2.3 unreleased
+
+- Use plone_server 1.2.3.
+  [smcmahon]
+
+- Instance path fouled up for three-decimal versions. Thanks, oggers.
+  [smcmahon]
+
+- Backport fulv's plone.org branch addition of authomatic to preserved cookies default in varnish role.
+  [smcmahon]
+
+- Add initial support for CentOS
+  [fulv]
+
+1.2.2 2015-12-08
+
+- Requirements update to plone_server 1.2.2 (hotfix 20121208)
+  [smcmahon]
+
+- Add nginx default_server option in virtual host specification.
+  [smcmahon]
+
+- Fix errors in restart script and motd that would cause them to fail for virtual hosts with no zodb path. Error was added in 1.2.0.
+  [smcmahon]
+
+- Fix backend port error in small & very small examples.
+  [smcmahon]
+
+1.2.1 2015-12-02
+
+- Advance Plone role requirement to 1.2.1.
+  [smcmahon]
+
+- Change varnish to run as varnish:varnish rather than nobody:nogroup. Does anybody like nobody?
+  [smcmahon]
+
+- Add mechanism for specifying already placed certificate files for nginx.
+  [smcmahon]
+
+- Add support for Debian Jessie and Ubuntu Vivid. This includes Varnish 4.0.x.
+  [smcmahon]
+
+- Improved test framework to automate tests of multiple boxes.
+  [smcmahon]
+
+1.2.0 2015-11-15
+
+- Add test framework.
+
+- Refactor to allow multiple plone instances per server. Document.
+  Involved changes in several included roles.
+  Requires plone.plone_server 1.2.0+.
+
+1.1.3 unreleased
+
+- Fix firewall.yml to work without configure.yml.
+
+- Refactor haproxy and varnish roles to allow support for multiple Plone backends.
+
+- Factor all defaults into roles or jinja2 default filters.
+  The goal is to make Ansible's inventory variables scheme work as an alternative to local-configure.yml.
+
+1.1.2 2015-10-13
+
+- Set client_max_body for nginx to 2M, allow override.
+
+- Fail if Ansible version is < 1.2. We might work with earlier,
+  but haven't tested.
+
+- Updated plone.plone_server requirement to 1.1.3.
+  Version for the full kit updated to match.
+
+1.1.1 2015-07-28
+
+- Updated plone.plone_server requirement to 1.1.1.
+  Version for the full kit updated to match.
+
+- Add a task to set the timezone.
+
+1.0 -2015-06-15
+
+- Update ansible galaxy requirement versions to latest.
+
+- Add restart_script role. It creates a zeocluster restart script
+  at zeocluster/scripts/restart_clients.sh.
+
+- Update to use Plone 4.3.6.
+
+1.0b5 - 2015-01-27
+
+- Bump plone_server requirement version.
+
+1.0b4 - 2015-01-07
+
+- Add X-Forwarded-For and X-Real-IP headers to Nginx setup.
+
+1.0b3 - 2014-12-17
+
+- Update plone_server role requirement to 1.0b6, which has a fix for bootstrap/setuptools problem.
+
+1.0b2 - 2014-12-08
+
+- Update for use with plone_server 1.0b5.
+
+1.0b1 - 2014-12-03
+
+- first tagged release

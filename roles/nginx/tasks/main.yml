@@ -1,0 +1,108 @@
+---
+
+- name: Install nginx
+  when: ansible_os_family == 'Debian'
+  apt:
+    name=nginx
+    state=present
+
+- name: Install nginx
+  when: ansible_os_family == 'RedHat'
+  yum:
+    name=nginx
+    state=present
+
+- name: Enable selinux boolean httpd_can_network_connect
+  when: ansible_selinux
+  seboolean: name=httpd_can_network_connect state=yes persistent=yes
+
+- name: Enable nginx to start on boot - CentOS
+  service:
+    name=nginx
+    enabled=yes
+  when: ansible_os_family == 'RedHat'
+
+- name: Get nginx version
+  shell: "/usr/sbin/nginx -v 2>&1 >/dev/null | sed -r 'sX^.*nginx/([0-9.]+).*$X\\1X'"
+  register: nginx_v_result
+  become: no
+
+- name: Should we use http2 if using ssl?
+  set_fact:
+    use_http2: "{{ allow_http2 | default(nginx_v_result.stdout | version_compare('1.9.5', 'ge')) }}"
+
+- name: Make sure sample host is absent
+  when: ansible_os_family == 'Debian'
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: restart nginx
+
+- name: Make sure sample host is absent
+  when: ansible_os_family == 'RedHat'
+  file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: restart nginx
+
+- name: Shared ssl configuration
+  copy:
+    content: "{{ ssl_shared_conf }}"
+    dest: /etc/nginx/conf.d/ssl_shared.conf
+    mode: 0644
+
+- name: Make sure /etc/nginx/ssl exists
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: 0755
+
+- name: Generate dhparam file
+  command: openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
+    creates=/etc/nginx/ssl/dhparam.pem
+
+- name: Create zope-style virtual hosts
+  when: ansible_os_family == 'Debian'
+  template:
+    src: host.j2
+    dest: /etc/nginx/sites-enabled/{{ item.protocol|default('http') }}_{{ item.hostname|default(inventory_hostname)|replace('.', '_') }}
+    mode: 0644
+  with_items: "{{ playbook_plones|map(attribute='webserver_virtualhosts')|list }}"
+  notify: restart nginx
+
+- name: Create zope-style virtual hosts
+  when: ansible_os_family == 'RedHat'
+  template:
+    src: host.j2
+    dest: /etc/nginx/conf.d/{{ item.protocol|default('http') }}_{{ item.hostname|default(inventory_hostname)|replace('.', '_') }}.conf
+    mode: 0644
+  with_items: "{{ playbook_plones|map(attribute='webserver_virtualhosts')|list }}"
+  notify: restart nginx
+
+- name: Copy certificate files
+  copy:
+    src: "{{ item.certificate_file }}"
+    dest: "/etc/nginx/ssl/{{ item.hostname }}.crt"
+    mode: 0444
+  with_items: "{{ playbook_plones|map(attribute='webserver_virtualhosts')|list }}"
+  when: item.certificate_file is defined
+  notify: restart nginx
+
+- name: Copy key files
+  copy:
+    src: "{{ item.key_file }}"
+    dest: "/etc/nginx/ssl/{{ item.hostname }}.key"
+    mode: 0400
+  with_items: "{{ playbook_plones|map(attribute='webserver_virtualhosts')|list }}"
+  when: item.key_file is defined
+  notify: restart nginx
+
+- name: nginx started
+  service:
+    name=nginx
+    state=started
+    enabled=yes
+
+- name: Assure nginx running at end of playbook
+  command: /bin/true
+  notify: nginx started

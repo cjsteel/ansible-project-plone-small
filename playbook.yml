@@ -1,0 +1,210 @@
+---
+
+- hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+
+
+  pre_tasks:
+
+    - name: Fail if Ansible is ancient
+      fail: msg="We need Ansible >= 2.0. Please update your kit. 'pip install -U Ansible'"
+      when: ansible_version.major < 2
+      tags:
+        - always
+
+    - name: Include vars from local-configure.yml if found
+      include_vars: "{{ item }}"
+      with_first_found:
+       - local-configure.yml
+       - null.yml
+      tags:
+        - update_packages
+        - plone
+        - plone1
+        - plone2
+        - plone3
+        - plone4
+        - haproxy
+        - varnish
+        - restart_script
+        - postfix
+        - logwatch
+        - munin
+        - motd
+        - nginx
+        - timezone
+        - audit
+
+    - name: Fail if no administrative email set
+      fail:
+        msg: "You must set the admin_email variable."
+      when: not admin_email
+      tags:
+        - plone
+        - plone1
+        - plone2
+        - plone3
+        - plone4
+        - haproxy
+        - varnish
+        - restart_script
+        - postfix
+        - logwatch
+        - munin
+        - motd
+        - nginx
+
+    - name: Update packages via apt
+      when: ansible_os_family == 'Debian'
+      apt: upgrade=dist update_cache=yes
+      tags:
+        - update_packages
+
+    - name: Ensure optional packages via apt
+      when: ansible_os_family == 'Debian'
+      apt: pkg={{ item }} state=present
+      with_items: "{{ additional_packages|default([]) }}"
+
+    - name: Enable aditional repos for CentOS
+      yum: pkg={{ item }} state=present
+      when: ansible_distribution == 'CentOS'
+      with_items:
+        - epel-release
+      tags:
+        - munin
+        - varnish
+
+    - name: Ensure optional packages via yum
+      when: ansible_os_family == 'RedHat'
+      yum: name={{ item }} state=present update_cache=yes
+      with_items: "{{ additional_packages|default([]) }}"
+
+    - name: Ensure selinux packages via yum
+      when: ansible_os_family == 'RedHat' and ansible_selinux
+      yum: name={{ item }} state=present update_cache=yes
+      with_items:
+        - libsemanage-python
+      tags:
+        - nginx
+        - haproxy
+
+  roles:
+
+    - role: ANXS.hostname
+
+    - role: jnv.unattended-upgrades
+      when: auto_upgrades|default(True) and ansible_os_family == 'Debian'
+      unattended_mail: root
+      unattended_origins_patterns:
+        - 'origin=${distro_id},archive=${distro_codename}-security'
+        - 'o=${distro_id},a=${distro_codename}'
+        - 'o=${distro_id},a=${distro_codename}-updates'
+
+    - role: fail2ban
+      when: install_fail2ban|default(True)
+      tags: fail2ban
+
+    - role: default_config
+      tags:
+        - plone
+        - plone1
+        - plone2
+        - plone3
+        - plone4
+        - haproxy
+        - varnish
+        - restart_script
+        - nginx
+        - postfix
+        - logwatch
+        - munin
+        - motd
+
+    - role: plone.plone_server
+      plone_config: "{{ playbook_plones[0] }}"
+      tags:
+        - plone
+        - plone1
+
+    - role: plone.plone_server
+      plone_config: "{{ playbook_plones[1]|default({}) }}"
+      when: playbook_plones|length > 1
+      tags:
+        - plone
+        - plone2
+
+    - role: plone.plone_server
+      plone_config: "{{ playbook_plones[2]|default({}) }}"
+      when: playbook_plones|length > 2
+      tags:
+        - plone
+        - plone3
+
+    - role: plone.plone_server
+      plone_config: "{{ playbook_plones[3]|default({}) }}"
+      when: playbook_plones|length > 3
+      tags:
+        - plone
+        - plone4
+
+    - role: haproxy
+      when: install_loadbalancer|default(True)
+      tags: haproxy
+
+    - role: varnish
+      when: install_proxycache|default(True)
+      tags: varnish
+
+    - role: nginx
+      when: install_webserver|default(True)
+      tags: nginx
+
+    - role: restart_script
+      tags: restart_script
+
+    - role: postfix
+      when: install_mailserver|default(True)
+      tags: postfix
+
+    - role: logwatch
+      when: install_logwatch|default(True)
+      tags: logwatch
+
+    - role: munin-node
+      when: install_muninnode|default(True)
+      tags: munin
+
+    - role: timezone
+      when: set_timezone|default(True)
+      tags: timezone
+
+    - role: motd
+      when: install_motd|default(True)
+      tags: motd
+
+#    - role: audit
+#      tags: audit
+
+  # tasks:
+
+  #   - name: Set timezone variables
+  #     tags: timezone
+  #     copy: content={{ timezone|default("UTC\n") }}
+  #           dest=/etc/timezone
+  #           owner=root
+  #           group=root
+  #           mode=0644
+  #           backup=yes
+  #     notify:
+  #       - update timezone
+
+  # handlers:
+  #   - name: update timezone
+  #     when: ansible_os_family == 'Debian'
+  #     command: dpkg-reconfigure --frontend noninteractive tzdata
+
+  #   - name: update timezone
+  #     when: ansible_os_family == 'RedHat'
+  #     file: src=/usr/share/zoneinfo/{{ timezone|default("UTC\n") }}  dest=/etc/localtime state=link force=yes
