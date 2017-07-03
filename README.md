@@ -60,7 +60,9 @@ If https has been properly configured:
 
 - [https://localhost:7081/Plone/](https://localhost:7081/Plone/)
 
+## Roadmap.md
 
+* [Using LDAP with Plone](https://community.plone.org/t/using-ldap-with-plone-5/1262/3)
 
 ### License
 
